@@ -6,11 +6,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init/init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - MeteoRisk_Network
 
@@ -23,11 +23,10 @@ services:
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      - PYTHONPATH=/opt/airflow
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
-      - METEORISK_DB_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/postgres
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - METEORISK_DB_URL=postgresql+psycopg2://meteorisk_user:meteorisk@postgres:5432/meteorisk_db
     volumes:
       - ./dags:/opt/airflow/dags
       - ./data:/opt/airflow/data
@@ -53,9 +52,9 @@ services:
     environment:
         - DB_HOST=postgres
         - DB_PORT=5432
-        - DB_NAME=postgres
-        - DB_USER=postgres
-        - DB_PASSWORD=postgres
+        - DB_NAME=meteorisk_db
+        - DB_USER=meteorisk_user
+        - DB_PASSWORD=meteorisk
     ports:
       - "8501:8501"
     volumes:
