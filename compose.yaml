@@ -17,7 +17,7 @@ services:
   airflow:
     build:
       context: .
-      dockerfile: Dockerfile.airflow
+      dockerfile: Dockerfile.airflowalways
     container_name: meteorisk_airflow
     restart: always
     environment:
@@ -25,6 +25,7 @@ services:
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - PYTHONPATH=/opt/airflow
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - METEORISK_DB_URL=postgresql+psycopg2://meteorisk_user:meteorisk@postgres:5432/meteorisk_db
     volumes:
@@ -33,7 +34,7 @@ services:
       - ./extraction:/opt/airflow/extraction
       - ./transformation:/opt/airflow/transformation
       - ./load:/opt/airflow/load
-      - airflow_data:/opt/airflow
+      - airflow_logs:/opt/airflow/logs
     ports:
       - "8080:8080"
     command: standalone
@@ -82,4 +83,4 @@ networks:
   MeteoRisk_Network:
 volumes:
   pgdata:
-  airflow_data:
+  airflow_logs:
