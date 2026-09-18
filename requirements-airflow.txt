@@ -3,6 +3,3 @@ numpy
 requests
 psycopg2-binary==2.9.9
 SQLAlchemy>=1.4,<2.0
-streamlit==1.18.0
-altair<5
-matplotlib

@@ -17,7 +17,7 @@ services:
   airflow:
     build:
       context: .
-      dockerfile: Dockerfile.airflowalways
+      dockerfile: Dockerfile.airflow
     container_name: meteorisk_airflow
     restart: always
     environment:
@@ -47,7 +47,7 @@ services:
   streamlit:
     build:
       context: .
-      dockerfile: dashboard/Dockerfile
+      dockerfile: data_analyst/Dockerfile
     container_name: meteorisk_dashboard
     restart: always
     environment:
@@ -58,10 +58,11 @@ services:
         - DB_PASSWORD=meteorisk
     ports:
       - "8501:8501"
-    volumes:
-      - ./dashboard:/app
     depends_on:
       - postgres
+    volumes:
+      - ./data_analyst:/app
+      - ./load:/app/load
     networks:
       MeteoRisk_Network:
 
