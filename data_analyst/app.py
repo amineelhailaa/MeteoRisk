@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
 from load.models import *
 import matplotlib.pyplot as plt
+import numpy as np
 
 DB_HOST = os.getenv("DB_HOST", "postgres")
 DB_PORT = os.getenv("DB_PORT", "5432")
@@ -275,3 +276,135 @@ plt.close(fig)
 
 
 
+
+@st.cache_data(ttl=600)
+def load_scatter_data(city, start_date, end_date):
+    with Session(engine) as session:
+        stmt = (
+            select(
+                City.name.label("city"),
+                Forecast.forecast_date.label("date"),
+
+                Temperature.temperature_max.label("max_temp"),
+
+                Precipitation.precipitation_sum.label(
+                    "precipitation"
+                ),
+
+                Wind.speed_10m_max.label("max_wind"),
+                Wind.gusts_10m_max.label("max_gust"),
+
+                RiskAssessment.risk_score.label("risk_score"),
+                RiskAssessment.weather_score.label(
+                    "weather_score"
+                ),
+            )
+            .select_from(Forecast)
+            .join(Forecast.city)
+            .join(Forecast.temperature)
+            .join(Forecast.precipitation)
+            .join(Forecast.wind)
+            .join(Forecast.risk_assessment)
+            .where(
+                Forecast.forecast_date >= start_date,
+                Forecast.forecast_date <= end_date,
+            )
+        )
+
+        if city != "All cities":
+            stmt = stmt.where(City.name == city)
+
+        rows = session.execute(stmt).mappings().all()
+
+    return pd.DataFrame(rows)
+
+
+scatter_df = load_scatter_data(
+    city=selected_city,
+    start_date=start_date,
+    end_date=end_date,
+)
+
+st.subheader("correlation between risk and ...")
+weather_options = {
+    "Maximum temperature": (
+        "max_temp",
+        "Maximum temperature (°C)",
+    ),
+    "Precipitation": (
+        "precipitation",
+        "Precipitation (mm)",
+    ),
+    "Wind speed": (
+        "max_wind",
+        "Maximum wind speed (km/h)",
+    ),
+    "Wind gust": (
+        "max_gust",
+        "Maximum wind gust (km/h)",
+    ),
+}
+
+score_options = {
+    "Risk score": "risk_score",
+    "Weather score": "weather_score",
+}
+
+selected_weather = st.selectbox(
+    "Select weather measurement",
+    list(weather_options.keys()),
+    key="scatter_weather"
+)
+
+selected_score = st.selectbox(
+    "Select score measurement",
+    list(score_options.keys()),
+    key="scatter_score"
+)
+
+x_column, x_label = weather_options[selected_weather]
+y_column = score_options[selected_score]
+
+plot_df = scatter_df[["city", "date", x_column, y_column]]
+fig, ax = plt.subplots(figsize=(11,6))
+ax.scatter(
+    plot_df[x_column],
+    plot_df[y_column],
+    color="blue",
+    edgecolor="white",
+    linewidth=0.5,
+    s=70,
+    alpha= 0.7
+)
+
+
+
+ax.set_title(f"{selected_weather} vs {selected_score}")
+ax.set_xlabel(x_label)
+ax.set_ylabel(selected_score)
+ax.grid(alpha=0.3)
+
+slope, intercept = np.polyfit(
+    plot_df[x_column],
+    plot_df[y_column],
+    1
+)
+
+x_values = np.linspace(
+    plot_df[x_column].min(),
+    plot_df[x_column].max(),
+    100,
+)
+
+ax.plot(
+    x_values,
+    slope * x_values + intercept,
+    color="red",
+    linestyle="--",
+    label="Trend line",
+)
+
+
+ax.legend()
+fig.tight_layout()
+st.pyplot(fig)
