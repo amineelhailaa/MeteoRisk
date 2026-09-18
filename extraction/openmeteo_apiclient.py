@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from api_client import ApiClient
+from extraction.api_client import ApiClient
 
 
 class OpenMeteoApi(ApiClient):
