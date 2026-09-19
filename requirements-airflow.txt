@@ -1,0 +1,5 @@
+pandas
+numpy
+requests
+psycopg2-binary==2.9.9
+SQLAlchemy>=1.4,<2.0

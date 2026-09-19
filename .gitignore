@@ -1,0 +1,5 @@
+.idea
+extraction/.ipynb_checkpoints
+/data/bronze/.ipynb_checkpoints/bronze_meteo_data-checkpoint.csv
+/transformation/.ipynb_checkpoints/Untitled-checkpoint.ipynb
+/data/bronze/.ipynb_checkpoints/worldcities-checkpoint.csv
