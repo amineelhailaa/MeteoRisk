@@ -408,3 +408,59 @@ ax.plot(
 ax.legend()
 fig.tight_layout()
 st.pyplot(fig)
+
+
+
+@st.cache_data(ttl=600)
+def load_pie_chart(category_type, start_date, end_date):
+    options = {
+        "Temperature": (
+            Temperature.category,
+            Forecast.temperature
+        ),
+        "Precipitation": (
+            Precipitation.category,
+            Forecast.precipitation
+        ),
+        "Wind": (
+            Wind.category,
+            Forecast.wind
+        )
+    }
+
+    category_type, relationship = options[category_type]
+    category_type = func.coalesce(category_type, "Unknown")
+
+    with Session(engine) as session:
+        stmt = (
+            select(category_type.label("category"), func.count(category_type))
+            .join(relationship)
+            .group_by(category_type)
+            .order_by(func.count(category_type).desc())
+        )
+        return pd.DataFrame(session.execute(stmt).mappings().all())
+
+
+st.subheader("weather categories with sum")
+selected_category = st.selectbox("Select category", ["Temperature", "Precipitation", "Wind"], key="pie_category")
+
+pie_df = load_pie_chart(selected_category, start_date, end_date)
+left, right = st.columns(2)
+
+with left:
+    fig, ax = plt.subplots(figsize=(5, 4))
+
+    ax.pie(
+        pie_df["count"],
+        labels=pie_df["category"],
+        autopct=lambda p: f"{p:.1f}%" if p >= 3 else "",
+        startangle=90,
+        wedgeprops={"width": 0.5},
+        rotatelabels=True,
+        labeldistance=1.15,
+
+    )
+
+    fig.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
