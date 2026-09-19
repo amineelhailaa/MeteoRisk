@@ -23,7 +23,7 @@ DATABASE_URL = os.getenv("METEORISK_DB_URL")
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-GOLD_PATH = PROJECT_ROOT / "data" / "gold" / "gold_meteo_data.csv"
+SILVER_PATH = PROJECT_ROOT / "data" / "silver" / "gold_meteo_data.csv"
 
 
 def create_tables() -> None:
@@ -140,7 +140,7 @@ def _extracted_at(row) -> datetime:
 
 
 
-def load_weather_csv(csv_path=GOLD_PATH):
+def load_weather_csv(csv_path=SILVER_PATH):
     df = pd.read_csv(csv_path)
     create_tables()
     return load_weather_dataframe(df)
