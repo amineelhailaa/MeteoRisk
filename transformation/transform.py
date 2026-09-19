@@ -1,6 +1,9 @@
 
+import numpy as np
 import pandas as pd
 from pathlib import Path
+
+from transformation.categories import add_weather_categories
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -90,18 +93,16 @@ def get_risk_score(
     temperature_max,
     wind_speed_max,
     wind_gusts_max,
+    temperature_min,
 ):
-    rain = min(max(precipitation_sum / 30, 0), 1)
-    temperature = min(max((temperature_max - 35) / 10, 0), 1)
-    wind = min(max(wind_speed_max / 80, 0), 1)
-    gusts = min(max(wind_gusts_max / 100, 0), 1)
+    rain = np.clip(precipitation_sum / 30, 0, 1)
+    heat = np.clip((temperature_max - 35) / 10, 0, 1)
+    cold = np.clip(-temperature_min / 10, 0, 1)
+    temperature = max(heat, cold)
+    wind = np.clip(wind_speed_max / 80, 0, 1)
+    gusts = np.clip(wind_gusts_max / 100, 0, 1)
 
-    score = 100 * (
-        0.4 * rain
-        + 0.4 * temperature
-        + 0.1 * wind
-        + 0.1 * gusts
-    )
+    score = 100 * max(rain, temperature, wind, gusts)
 
     return round(score, 2)
 
@@ -122,7 +123,6 @@ def transform_weather_data(
     input_path=BRONZE_PATH,
     output_path=SILVER_PATH,
 ):
-    """Clean Bronze weather data and save the Gold dataset."""
     df = pd.read_csv(input_path)
 
     df = to_string(df, "city", "country")
@@ -152,6 +152,7 @@ def transform_weather_data(
             row["temperature_max"],
             row["wind_speed_10m_max"],
             row["wind_gusts_10m_max"],
+            row["temperature_min"],
         ),
         axis=1,
     )
@@ -164,6 +165,7 @@ def transform_weather_data(
         axis=1,
     )
 
+    df = add_weather_categories(df)
     df.to_csv(output_path, index=False)
 
     return output_path
